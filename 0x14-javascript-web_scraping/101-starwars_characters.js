@@ -1,25 +1,38 @@
 #!/usr/bin/node
+const fetch = require('node-fetch');
 
-const request = require('request');
-const id = process.argv[2];
-const url = `https://swapi-api.alx-tools.com/api/films/${id}`;
+function getMovieCharacters(movieId) {
+	const url = `https://swapi.dev/api/films/${movieId}/`;
+	fetch(url)
+		.then(response => {
+			if (!response.ok) {
+				throw new Error('Failed to fetch movie details');
+			}
+			return response.json();
+		})
+		.then(data => {
+			const characters = data.characters;
+			characters.forEach(characterUrl => {
+				fetch(characterUrl)
+					.then(response => {
+						if (!response.ok) {
+							throw new Error(`Failed to fetch character details for URL: ${characterUrl}`);
+						}
+						return response.json();
+					})
+					.then(characterData => {
+						console.log(characterData.name);
+					})
+					.catch(error => {
+						console.error(error.message);
+					});
+			});
+		})
+		.catch(error => {
+			console.error(error.message);
+		});
+}
 
-request.get(url, (error, response, body) => {
-  if (error) {
-    console.log(error);
-  } else {
-    const content = JSON.parse(body);
-    const characters = content.characters;
-    // console.log(characters);
-    for (const character of characters) {
-      request.get(character, (error, response, body) => {
-        if (error) {
-          console.log(error);
-        } else {
-          const names = JSON.parse(body);
-          console.log(names.name);
-        }
-      });
-    }
-  }
-});
+// Example usage: Print characters of "Return of the Jedi" (movie ID = 3)
+getMovieCharacters(3);
+
